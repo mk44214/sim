@@ -1,0 +1,1322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Simgenie — The What-If Machine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #080c14;
+    --surface: #0f1623;
+    --surface2: #151d2e;
+    --border: #1e2d45;
+    --accent: #38bdf8;
+    --accent2: #818cf8;
+    --amber: #f59e0b;
+    --green: #34d399;
+    --red: #f87171;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --dim: #334155;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    overflow-x: hidden;
+    line-height: 1.6;
+  }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 2rem; height: 56px;
+    background: rgba(8,12,20,0.85); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-logo { font-weight: 800; font-size: 1.1rem; color: var(--accent); letter-spacing: -0.03em; }
+  .nav-links { display: flex; gap: 2rem; }
+  .nav-links a { color: var(--muted); text-decoration: none; font-size: 0.85rem; font-weight: 500; transition: color 0.2s; }
+  .nav-links a:hover { color: var(--text); }
+
+  /* ── SECTIONS ── */
+  section { max-width: 1100px; margin: 0 auto; padding: 6rem 2rem; }
+  .section-label {
+    font-size: 0.75rem; font-weight: 600; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--accent); margin-bottom: 1rem;
+  }
+  h1 { font-size: clamp(2.5rem, 6vw, 4.5rem); font-weight: 900; letter-spacing: -0.04em; line-height: 1.05; }
+  h2 { font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; }
+  h3 { font-size: 1.2rem; font-weight: 700; letter-spacing: -0.02em; }
+  .lead { font-size: 1.15rem; color: var(--muted); line-height: 1.7; max-width: 640px; margin-top: 1rem; }
+
+  /* ── HERO ── */
+  #hero {
+    min-height: 100vh; display: flex; flex-direction: column; justify-content: center;
+    position: relative; overflow: hidden; padding-top: 56px;
+    max-width: none;
+  }
+  .hero-inner { max-width: 1100px; margin: 0 auto; padding: 0 2rem; position: relative; z-index: 2; }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: rgba(56,189,248,0.08); border: 1px solid rgba(56,189,248,0.2);
+    border-radius: 100px; padding: 0.35rem 1rem; font-size: 0.8rem; font-weight: 600;
+    color: var(--accent); margin-bottom: 2rem;
+  }
+  .hero-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse 2s infinite; }
+  .hero-desc { font-size: clamp(1rem, 2vw, 1.2rem); color: var(--muted); margin-top: 1rem; max-width: 600px; line-height: 1.7; }
+  .hero-cta { display: flex; gap: 1rem; margin-top: 3rem; flex-wrap: wrap; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    padding: 0.75rem 1.75rem; border-radius: 8px; font-size: 0.9rem; font-weight: 600;
+    text-decoration: none; transition: all 0.2s; cursor: pointer; border: none;
+  }
+  .btn-primary { background: var(--accent); color: #000; }
+  .btn-primary:hover { background: #7dd3fc; transform: translateY(-1px); }
+  .btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--border); }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+  #hero-canvas { position: absolute; inset: 0; pointer-events: none; }
+
+  /* ── TYPEWRITER ── */
+  .whatif-box {
+    margin-top: 4rem;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 1.5rem;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.85rem;
+    max-width: 680px;
+  }
+  .whatif-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; }
+  .whatif-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .wf-red { background: #f87171; }
+  .wf-amber { background: var(--amber); }
+  .wf-green { background: var(--green); }
+  #whatif-text { color: var(--green); min-height: 2.5rem; }
+  .cursor { display: inline-block; width: 2px; height: 1em; background: var(--green); animation: blink 1s infinite; vertical-align: text-bottom; margin-left: 2px; }
+
+  /* ── CARDS ── */
+  .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; margin-top: 3rem; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 1.75rem;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .card-icon { font-size: 1.8rem; margin-bottom: 1rem; }
+  .card h3 { margin-bottom: 0.5rem; }
+  .card p { color: var(--muted); font-size: 0.9rem; line-height: 1.6; }
+
+  /* ── LAYERS ── */
+  .layer-diagram { margin-top: 3rem; }
+  .layer {
+    display: flex; align-items: stretch; margin-bottom: 4px;
+    border-radius: 8px; overflow: hidden; cursor: pointer; transition: all 0.3s;
+  }
+  .layer-num {
+    display: flex; align-items: center; justify-content: center;
+    width: 48px; font-size: 0.75rem; font-weight: 700;
+    font-family: 'JetBrains Mono', monospace; flex-shrink: 0;
+  }
+  .layer-body { flex: 1; padding: 1rem 1.5rem; }
+  .layer-title { font-weight: 700; font-size: 0.95rem; margin-bottom: 0.2rem; }
+  .layer-desc { font-size: 0.82rem; opacity: 0.7; }
+  .layer-detail {
+    max-height: 0; overflow: hidden; transition: max-height 0.4s ease;
+    font-size: 0.82rem; color: var(--muted);
+  }
+  .layer.open .layer-detail { max-height: 140px; margin-top: 0.5rem; }
+  .layer-badge {
+    display: flex; align-items: center; padding: 0 1.25rem;
+    font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; white-space: nowrap;
+  }
+  .l1 { background: rgba(56,189,248,0.12); border: 1px solid rgba(56,189,248,0.3); }
+  .l1 .layer-num { background: rgba(56,189,248,0.2); color: var(--accent); }
+  .l1 .layer-badge { color: var(--accent); }
+  .l2 { background: rgba(129,140,248,0.1); border: 1px solid rgba(129,140,248,0.25); }
+  .l2 .layer-num { background: rgba(129,140,248,0.2); color: var(--accent2); }
+  .l2 .layer-badge { color: var(--accent2); }
+  .l3 { background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.2); }
+  .l3 .layer-num { background: rgba(52,211,153,0.15); color: var(--green); }
+  .l3 .layer-badge { color: var(--green); }
+  .l4 { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); }
+  .l4 .layer-num { background: rgba(245,158,11,0.15); color: var(--amber); }
+  .l4 .layer-badge { color: var(--amber); }
+  .l5 { background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.2); }
+  .l5 .layer-num { background: rgba(248,113,113,0.15); color: var(--red); }
+  .l5 .layer-badge { color: var(--red); }
+
+  /* ── DES ── */
+  .des-container {
+    margin-top: 3rem; position: relative;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 2rem; overflow: hidden;
+  }
+  .des-grid { display: grid; grid-template-columns: 190px 1fr 190px; gap: 2rem; align-items: start; }
+  .des-col-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 1rem; }
+  .event-queue-list { display: flex; flex-direction: column; gap: 4px; }
+  .eq-item {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 6px; padding: 0.5rem 0.75rem;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;
+    transition: all 0.4s;
+  }
+  .eq-item.active { border-color: var(--accent); background: rgba(56,189,248,0.08); color: var(--accent); }
+  .eq-item.done { opacity: 0.25; }
+  .des-canvas-wrap { position: relative; height: 260px; }
+  #des-canvas { width: 100%; height: 100%; }
+  .state-attr { display: flex; flex-direction: column; gap: 6px; }
+  .attr-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; }
+  .attr-key { color: var(--muted); }
+  .attr-val { font-family: 'JetBrains Mono', monospace; font-weight: 600; transition: color 0.4s; }
+  .attr-val.changed { color: var(--amber); }
+  .des-tick { font-size: 0.75rem; color: var(--muted); margin-top: 0.75rem; font-family: 'JetBrains Mono', monospace; }
+  #tick-display { color: var(--accent); }
+
+  /* ── SCHEMA SWAP ── */
+  .swap-container { margin-top: 3rem; display: grid; grid-template-columns: 1fr 80px 1fr; gap: 0; align-items: center; }
+  .schema-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 1.5rem; transition: all 0.5s;
+  }
+  .schema-title { font-size: 1rem; font-weight: 700; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+  .schema-chip {
+    display: inline-block; padding: 0.15rem 0.5rem;
+    background: rgba(56,189,248,0.1); border: 1px solid rgba(56,189,248,0.2);
+    border-radius: 4px; font-size: 0.65rem; font-weight: 700; color: var(--accent);
+    letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  .schema-field { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--muted); margin-bottom: 3px; }
+  .schema-field span { color: var(--text); }
+  .swap-arrow { display: flex; align-items: center; justify-content: center; font-size: 2rem; color: var(--accent); transition: transform 0.3s; }
+  .engine-unchanged {
+    margin-top: 2rem; text-align: center;
+    background: rgba(52,211,153,0.06); border: 1px solid rgba(52,211,153,0.2);
+    border-radius: 10px; padding: 1rem;
+    font-size: 0.82rem; color: var(--green); font-weight: 600; line-height: 1.8;
+  }
+
+  /* ── MONTE CARLO ── */
+  #mc-canvas { width: 100%; height: 320px; display: block; margin-top: 2rem; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); }
+
+  /* ── CI BARS ── */
+  .ci-container { margin-top: 1.5rem; display: flex; flex-direction: column; gap: 1.2rem; }
+  .ci-label { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 0.4rem; }
+  .ci-key { color: var(--muted); }
+  .ci-range { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--accent); }
+  .ci-track { background: var(--dim); border-radius: 100px; height: 8px; position: relative; }
+  .ci-fill { height: 100%; border-radius: 100px; position: relative; animation: barGrow 1.5s ease-out both; transform-origin: left; }
+  @keyframes barGrow { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0% 0 0); } }
+  .ci-dot { position: absolute; top: 50%; width: 12px; height: 12px; border-radius: 50%; background: white; border: 2px solid var(--bg); transform: translateY(-50%); }
+
+  /* ── DOMAINS ── */
+  .domains-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 1rem; margin-top: 2.5rem; }
+  .domain-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 1.25rem; transition: all 0.25s;
+  }
+  .domain-card:hover { border-color: var(--muted); }
+  .domain-card.live { border-color: rgba(52,211,153,0.2); }
+  .domain-card.live:hover { border-color: var(--green); }
+  .domain-live-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+  .domain-live-dot.live { background: var(--green); animation: pulse 2s infinite; }
+  .domain-live-dot.yaml { background: var(--dim); }
+  .domain-name { font-weight: 700; font-size: 0.9rem; margin-bottom: 0.25rem; }
+  .domain-meta { font-size: 0.75rem; color: var(--muted); }
+  .domain-events { font-size: 0.7rem; font-family: 'JetBrains Mono', monospace; margin-top: 0.5rem; color: var(--green); }
+
+  /* ── TIMELINE ── */
+  .timeline { margin-top: 3rem; position: relative; padding-left: 2rem; }
+  .timeline::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: var(--border); }
+  .tl-item { position: relative; margin-bottom: 2.5rem; }
+  .tl-dot { position: absolute; left: -2rem; top: 0.35rem; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--bg); transform: translateX(-5px); }
+  .tl-phase { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 0.25rem; }
+  .tl-title { font-weight: 700; font-size: 1rem; margin-bottom: 0.25rem; }
+  .tl-desc { font-size: 0.85rem; color: var(--muted); }
+  .tl-tests { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; margin-top: 0.35rem; }
+
+  /* ── TECH STACK ── */
+  .stack-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem; margin-top: 2.5rem; }
+  .stack-item {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 1.25rem; text-align: center; transition: all 0.2s;
+  }
+  .stack-item:hover { border-color: var(--accent2); transform: translateY(-2px); }
+  .stack-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+  .stack-name { font-weight: 700; font-size: 0.9rem; margin-bottom: 0.25rem; }
+  .stack-role { font-size: 0.72rem; color: var(--muted); }
+
+  /* ── NARRATIVE ── */
+  .narrative-box {
+    background: var(--surface); border: 1px solid var(--border);
+    border-left: 3px solid var(--accent2);
+    border-radius: 0 12px 12px 0; padding: 1.5rem 2rem; margin-top: 2rem;
+  }
+  .narrative-box p { color: var(--muted); font-size: 0.95rem; line-height: 1.85; font-style: italic; }
+  .narrative-box .narrative-meta { font-size: 0.75rem; color: var(--muted); margin-top: 1rem; display: flex; gap: 1.5rem; flex-wrap: wrap; }
+  .narrative-meta span { color: var(--text); font-weight: 600; }
+
+  /* ── FOOTER ── */
+  footer { border-top: 1px solid var(--border); text-align: center; padding: 2.5rem; color: var(--muted); font-size: 0.82rem; }
+
+  /* ── UTILITIES ── */
+  .text-accent { color: var(--accent); }
+  .text-accent2 { color: var(--accent2); }
+  .text-amber { color: var(--amber); }
+  .text-green { color: var(--green); }
+  .text-red { color: var(--red); }
+  .mt-4 { margin-top: 1rem; }
+  .mt-6 { margin-top: 1.5rem; }
+  .mt-8 { margin-top: 2rem; }
+  .tag {
+    display: inline-block; padding: 0.2rem 0.6rem; border-radius: 4px;
+    font-size: 0.72rem; font-weight: 700; letter-spacing: 0.05em; margin-right: 0.4rem; margin-top: 0.3rem;
+  }
+  .tag-blue { background: rgba(56,189,248,0.1); color: var(--accent); border: 1px solid rgba(56,189,248,0.2); }
+  .tag-purple { background: rgba(129,140,248,0.1); color: var(--accent2); border: 1px solid rgba(129,140,248,0.2); }
+  .tag-green { background: rgba(52,211,153,0.1); color: var(--green); border: 1px solid rgba(52,211,153,0.2); }
+  .tag-amber { background: rgba(245,158,11,0.1); color: var(--amber); border: 1px solid rgba(245,158,11,0.2); }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 0; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center; }
+
+  /* scroll-reveal */
+  .reveal { opacity: 0; transform: translateY(30px); transition: all 0.7s ease; }
+  .reveal.visible { opacity: 1; transform: none; }
+
+  .progress-bar {
+    height: 4px; border-radius: 100px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    animation: grow 2s ease-out both; transform-origin: left;
+  }
+  @keyframes grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+  code {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.85em;
+    background: rgba(56,189,248,0.08); border: 1px solid rgba(56,189,248,0.15);
+    border-radius: 4px; padding: 0.1em 0.4em; color: var(--accent);
+  }
+
+  @media (max-width: 720px) {
+    .two-col { grid-template-columns: 1fr; }
+    .des-grid { grid-template-columns: 1fr; }
+    .swap-container { grid-template-columns: 1fr; }
+    .swap-arrow { display: none; }
+    .nav-links { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">simgenie</div>
+  <div class="nav-links">
+    <a href="#concept">Concept</a>
+    <a href="#architecture">Architecture</a>
+    <a href="#engine">Engine</a>
+    <a href="#domains">Domains</a>
+    <a href="#output">Output</a>
+    <a href="#stack">Stack</a>
+  </div>
+</nav>
+
+<!-- ═══════════════════ HERO ═══════════════════ -->
+<div id="hero">
+  <canvas id="hero-canvas"></canvas>
+  <div class="hero-inner">
+    <div class="hero-badge">
+      <span class="dot"></span>
+      Vertical-agnostic simulation engine
+    </div>
+    <h1>What if you could<br /><span class="text-accent">test every decision</span><br />before you make it?</h1>
+    <p class="hero-desc">
+      Simgenie is a "what-if machine" — inject a change, run thousands of futures forward in parallel,
+      and get probability-weighted outcomes <em>before</em> you act.
+    </p>
+    <div class="hero-cta">
+      <a href="#concept" class="btn btn-primary">Explore the engine ↓</a>
+      <a href="#domains" class="btn btn-ghost">13 live domains</a>
+    </div>
+    <div class="whatif-box">
+      <div class="whatif-header">
+        <div class="whatif-dot wf-red"></div>
+        <div class="whatif-dot wf-amber"></div>
+        <div class="whatif-dot wf-green"></div>
+        <span style="color:var(--muted);font-size:0.75rem;margin-left:0.5rem">simgenie › what-if terminal</span>
+      </div>
+      <div id="whatif-text"><span class="cursor"></span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ CONCEPT ═══════════════════ -->
+<section id="concept">
+  <div class="section-label">The Core Concept</div>
+  <h2 class="reveal">One engine. Every domain.</h2>
+  <p class="lead reveal">
+    The architectural insight: a hospital simulation and a supply chain stress-test share
+    the same mathematical skeleton. Only the domain model changes — the engine never does.
+  </p>
+
+  <div class="card-grid reveal">
+    <div class="card">
+      <div class="card-icon">🔀</div>
+      <h3>Inject a change</h3>
+      <p>Modify any parameter — a policy, a resource level, a price — and the engine forks reality at that point in time.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">⚡</div>
+      <h3>Run forward in time</h3>
+      <p>The discrete-event engine jumps tick-by-tick through causal consequences, running hundreds of parallel futures simultaneously.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">📊</div>
+      <h3>Get probability-weighted outcomes</h3>
+      <p>Not a single prediction — a distribution. "There's a 73% chance ICU occupancy exceeds 95% within 14 days."</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🔄</div>
+      <h3>Swap the domain</h3>
+      <p>Change one YAML schema file and the same engine models insurance loss ratios, portfolio drawdowns, or pharma clinical trial yield.</p>
+    </div>
+  </div>
+
+  <!-- How simulation works diagram -->
+  <div class="mt-8 reveal" style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:2rem;">
+    <div style="text-align:center;margin-bottom:2rem;">
+      <div class="section-label" style="margin-bottom:0.25rem">How it works</div>
+      <h3>From question to decision</h3>
+    </div>
+    <div id="flow-diagram" style="display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:wrap;"></div>
+  </div>
+</section>
+
+<hr class="divider" />
+
+<!-- ═══════════════════ ARCHITECTURE ═══════════════════ -->
+<section id="architecture">
+  <div class="section-label">Architecture</div>
+  <h2 class="reveal">Five layers — one invariant core</h2>
+  <p class="lead reveal">Click any layer to expand. Layers 2–5 are universal across every vertical. Only Layer 1 changes.</p>
+
+  <div class="layer-diagram reveal">
+    <div class="layer l1" onclick="toggleLayer(this)">
+      <div class="layer-num">L1</div>
+      <div class="layer-body">
+        <div class="layer-title">Domain Model</div>
+        <div class="layer-desc">YAML schema — entities, events, relationships, time scale</div>
+        <div class="layer-detail">
+          One <code>.yaml</code> file per vertical. Declares entity types, event types, relationship
+          semantics, and simulation time unit (milliseconds to months). Swapping this file transforms
+          the entire simulation. 39 schemas exist — hospitals, supply chains, insurance, aviation,
+          pharma, maritime, energy grids, and more. No Python changes required.
+        </div>
+      </div>
+      <div class="layer-badge">🔁 Swappable</div>
+    </div>
+
+    <div class="layer l2" onclick="toggleLayer(this)">
+      <div class="layer-num">L2</div>
+      <div class="layer-body">
+        <div class="layer-title">Simulation Core</div>
+        <div class="layer-desc">State machine + time-step engine · Agent-based · System dynamics · Discrete event · Monte Carlo</div>
+        <div class="layer-detail">
+          Immutable <code>WorldState</code> snapshots. Variable time-step DES — the clock jumps to the
+          next scheduled event, skipping empty time. Events are the <em>only</em> mechanism for state change.
+          Core components: <code>Entity</code>, <code>RelationshipGraph</code>, <code>EventQueue</code>, <code>SimulationRunner</code>, <code>ParallelSimulationRunner</code>.
+        </div>
+      </div>
+      <div class="layer-badge">🔒 Universal</div>
+    </div>
+
+    <div class="layer l3" onclick="toggleLayer(this)">
+      <div class="layer-num">L3</div>
+      <div class="layer-body">
+        <div class="layer-title">Uncertainty & Calibration</div>
+        <div class="layer-desc">Bayesian inference · Distribution fitting · Sensitivity analysis · ABC calibration</div>
+        <div class="layer-detail">
+          Every parameter is a <em>distribution</em>, not a point estimate. Inputs are sampled at runtime.
+          Approximate Bayesian Computation (ABC) tunes the model against observed real-world data.
+          Confidence intervals on every output metric. This is the "trust layer" — the engine quantifies
+          exactly what it doesn't know.
+        </div>
+      </div>
+      <div class="layer-badge">🔒 Universal</div>
+    </div>
+
+    <div class="layer l4" onclick="toggleLayer(this)">
+      <div class="layer-num">L4</div>
+      <div class="layer-body">
+        <div class="layer-title">Scenario Management</div>
+        <div class="layer-desc">Branching · Parameter sweep · Comparison · Audit trail</div>
+        <div class="layer-detail">
+          <code>ScenarioManager</code> forks <code>WorldState</code> snapshots with full lineage — version control for reality.
+          <code>ParameterSweep</code> fans out over a parameter grid automatically.
+          Every attribute delta is recorded in an immutable audit trail. Compare any two branches side-by-side.
+        </div>
+      </div>
+      <div class="layer-badge">🔒 Universal</div>
+    </div>
+
+    <div class="layer l5" onclick="toggleLayer(this)">
+      <div class="layer-num">L5</div>
+      <div class="layer-body">
+        <div class="layer-title">Output & Reasoning</div>
+        <div class="layer-desc">LLM-generated narratives · Probability distributions · Confidence intervals · Goal-seek</div>
+        <div class="layer-detail">
+          The Anthropic Claude API generates plain-language narratives using the <code>tool_use</code> pattern —
+          the model reads real numbers from structured simulation output, it never guesses.
+          4 narrative types: executive summary, risk analysis, sensitivity report, goal-seek explanation.
+          SQLite WAL backend for run persistence; JSON fallback.
+        </div>
+      </div>
+      <div class="layer-badge">🔒 Universal</div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider" />
+
+<!-- ═══════════════════ ENGINE ═══════════════════ -->
+<section id="engine">
+  <div class="section-label">Inside the Engine</div>
+  <h2 class="reveal">Discrete Event Simulation — live</h2>
+  <p class="lead reveal">
+    Watch a real simulation tick. The clock jumps to each event in priority order,
+    applies it to the immutable world state, and produces a new snapshot.
+    Old state is always addressable.
+  </p>
+
+  <div class="des-container reveal">
+    <div class="des-grid">
+      <div>
+        <div class="des-col-title">Event Queue (min-heap)</div>
+        <div class="event-queue-list" id="eq-list">
+          <div class="eq-item" id="eq-0">t=0.0  PatientArrival</div>
+          <div class="eq-item" id="eq-1">t=0.8  BedAssignment</div>
+          <div class="eq-item" id="eq-2">t=2.1  LabRequest</div>
+          <div class="eq-item" id="eq-3">t=3.4  NurseShiftChange</div>
+          <div class="eq-item" id="eq-4">t=4.7  PatientDischarge</div>
+          <div class="eq-item" id="eq-5">t=5.2  ICUTransfer</div>
+        </div>
+        <div class="des-tick">⏱ tick <span id="tick-display">0.0</span></div>
+      </div>
+
+      <div class="des-canvas-wrap">
+        <canvas id="des-canvas"></canvas>
+      </div>
+
+      <div>
+        <div class="des-col-title">WorldState snapshot</div>
+        <div class="state-attr">
+          <div class="attr-row"><span class="attr-key">patients_active</span><span class="attr-val" id="sv-patients">0</span></div>
+          <div class="attr-row"><span class="attr-key">icu_occupancy</span><span class="attr-val" id="sv-icu">0%</span></div>
+          <div class="attr-row"><span class="attr-key">beds_available</span><span class="attr-val" id="sv-beds">24</span></div>
+          <div class="attr-row"><span class="attr-key">wait_time_avg</span><span class="attr-val" id="sv-wait">—</span></div>
+          <div class="attr-row"><span class="attr-key">nurses_on_shift</span><span class="attr-val" id="sv-nurses">12</span></div>
+          <div class="attr-row"><span class="attr-key">events_processed</span><span class="attr-val text-accent" id="sv-events">0</span></div>
+        </div>
+        <div style="font-size:0.72rem;color:var(--muted);margin-top:1rem;line-height:1.6">
+          Each event returns a <em>new</em> WorldState.<br/>Old state always addressable.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="two-col mt-8 reveal">
+    <div>
+      <h3>Immutability is the superpower</h3>
+      <p class="mt-4" style="color:var(--muted);font-size:0.9rem;line-height:1.7">
+        Every <code>WorldState</code> is <code>frozen=True</code>. Events don't mutate — they produce a
+        <em>new</em> snapshot. This makes branching trivial (fork any snapshot at any tick),
+        parallelism safe (Ray workers never share mutable state), and audit trails exact
+        (every historical state is addressable).
+      </p>
+      <div style="margin-top:1rem">
+        <span class="tag tag-blue">frozen=True</span>
+        <span class="tag tag-green">fork-safe</span>
+        <span class="tag tag-purple">Ray-parallel</span>
+        <span class="tag tag-amber">seed-reproducible</span>
+      </div>
+    </div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1.5rem;line-height:2.1">
+      <div style="color:var(--muted)"># Entity is frozen — all mutations return new instances</div>
+      <div><span style="color:var(--accent2)">patient</span> = Entity(<span style="color:var(--amber)">"p-01"</span>, <span style="color:var(--amber)">"Patient"</span>)</div>
+      <div><span style="color:var(--accent2)">admitted</span> = patient.<span style="color:var(--accent)">with_attribute</span>(</div>
+      <div style="padding-left:1.5rem"><span style="color:var(--amber)">"icu_admitted"</span>, <span style="color:var(--green)">True</span></div>
+      <div>)</div>
+      <br/>
+      <div style="color:var(--muted)"># Old state still intact — branching is free</div>
+      <div>assert patient.get(<span style="color:var(--amber)">"icu_admitted"</span>) <span style="color:var(--green)">is None</span></div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider" />
+
+<!-- ═══════════════════ SCHEMA SWAP ═══════════════════ -->
+<section id="schema-swap">
+  <div class="section-label">Domain Agnosticism</div>
+  <h2 class="reveal">Swap the schema. Same engine.</h2>
+  <p class="lead reveal">
+    The engine core never changes. One YAML file is the entire domain model.
+    Replace it and the simulation transforms completely — entities, events, time scale, metrics.
+  </p>
+
+  <div class="swap-container reveal">
+    <div class="schema-card">
+      <div class="schema-title" id="schema-from-title">🏥 healthcare.yaml <span class="schema-chip">Domain Schema</span></div>
+      <div id="schema-from-body">
+        <div class="schema-field">time_unit: <span>hours</span></div>
+        <div class="schema-field">entities:</div>
+        <div class="schema-field">&nbsp;&nbsp;- <span>Patient</span></div>
+        <div class="schema-field">&nbsp;&nbsp;- <span>Nurse</span></div>
+        <div class="schema-field">&nbsp;&nbsp;- <span>ICU_Bed</span></div>
+        <div class="schema-field">events:</div>
+        <div class="schema-field">&nbsp;&nbsp;- <span>PatientArrival</span></div>
+        <div class="schema-field">&nbsp;&nbsp;- <span>BedAssignment</span></div>
+        <div class="schema-field">&nbsp;&nbsp;- <span>Discharge</span></div>
+        <div class="schema-field">metrics:</div>
+        <div class="schema-field">&nbsp;&nbsp;- <span>icu_occupancy</span></div>
+        <div class="schema-field">&nbsp;&nbsp;- <span>lwbs_rate</span></div>
+      </div>
+    </div>
+
+    <div class="swap-arrow" id="swap-arrow">⟶</div>
+
+    <div class="schema-card" id="schema-to-card">
+      <div class="schema-title" id="schema-to-title">🚚 supply_chain.yaml <span class="schema-chip" style="background:rgba(245,158,11,0.1);border-color:rgba(245,158,11,0.2);color:var(--amber)">Domain Schema</span></div>
+      <div id="schema-to-body">
+        <div class="schema-field">time_unit: <span>days</span></div>
+        <div class="schema-field">entities:</div>
+        <div class="schema-field">&nbsp;&nbsp;- <span>Supplier</span></div>
+        <div class="schema-field">&nbsp;&nbsp;- <span>Warehouse</span></div>
+        <div class="schema-field">&nbsp;&nbsp;- <span>SKU</span></div>
+        <div class="schema-field">events:</div>
+        <div class="schema-field">&nbsp;&nbsp;- <span>OrderPlaced</span></div>
+        <div class="schema-field">&nbsp;&nbsp;- <span>StockReplenish</span></div>
+        <div class="schema-field">&nbsp;&nbsp;- <span>SLABreach</span></div>
+        <div class="schema-field">metrics:</div>
+        <div class="schema-field">&nbsp;&nbsp;- <span>fill_rate</span></div>
+        <div class="schema-field">&nbsp;&nbsp;- <span>inventory_turns</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="engine-unchanged reveal">
+    ✓ Entity &nbsp;·&nbsp; WorldState &nbsp;·&nbsp; EventQueue &nbsp;·&nbsp; SimulationRunner &nbsp;·&nbsp; ParallelRunner &nbsp;·&nbsp; Distributions &nbsp;·&nbsp; Calibration &nbsp;·&nbsp; Narratives<br/>
+    <span style="opacity:0.6;font-weight:400">All identical. Unchanged. Universal across every vertical.</span>
+  </div>
+</section>
+
+<hr class="divider" />
+
+<!-- ═══════════════════ MONTE CARLO ═══════════════════ -->
+<section id="monte-carlo">
+  <div class="section-label">Parallel Uncertainty</div>
+  <h2 class="reveal">Every run is one possible future</h2>
+  <p class="lead reveal">
+    Monte Carlo fan-out via Ray: hundreds of independent simulation runs, each with a different
+    random seed and sampled parameters. The output is a probability distribution, not a single number.
+  </p>
+
+  <canvas id="mc-canvas" class="reveal"></canvas>
+
+  <div class="two-col mt-8 reveal">
+    <div>
+      <h3>Independent reproducibility</h3>
+      <p class="mt-4" style="color:var(--muted);font-size:0.9rem;line-height:1.7">
+        <code>seed = base_seed + run_id</code> — every run is independently replayable.
+        Ray distributes work across CPU cores with no shared mutable state between workers.
+        Thread-pool fallback when Ray isn't needed.
+      </p>
+    </div>
+    <div>
+      <h3>Confidence intervals on everything</h3>
+      <div class="ci-container">
+        <div>
+          <div class="ci-label"><span class="ci-key">ICU occupancy (14 days)</span><span class="ci-range">68% – 94%</span></div>
+          <div class="ci-track"><div class="ci-fill" style="background:linear-gradient(90deg,var(--accent2),var(--accent));width:65%;margin-left:17%;"><div class="ci-dot" style="left:50%;transform:translate(-50%,-50%)"></div></div></div>
+        </div>
+        <div>
+          <div class="ci-label"><span class="ci-key">Avg wait time (hrs)</span><span class="ci-range">1.2 – 4.7</span></div>
+          <div class="ci-track"><div class="ci-fill" style="background:linear-gradient(90deg,var(--green),var(--amber));width:55%;margin-left:10%;"><div class="ci-dot" style="left:40%;transform:translate(-50%,-50%)"></div></div></div>
+        </div>
+        <div>
+          <div class="ci-label"><span class="ci-key">LWBS rate</span><span class="ci-range">2.1% – 8.9%</span></div>
+          <div class="ci-track"><div class="ci-fill" style="background:linear-gradient(90deg,var(--amber),var(--red));width:45%;margin-left:15%;"><div class="ci-dot" style="left:55%;transform:translate(-50%,-50%)"></div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider" />
+
+<!-- ═══════════════════ DOMAINS ═══════════════════ -->
+<section id="domains">
+  <div class="section-label">Domain Coverage</div>
+  <h2 class="reveal">13 live domains. 26 more ready to wire.</h2>
+  <p class="lead reveal">
+    Live domains have full Python event handlers and run real simulations today.
+    YAML-only domains have declarative schemas — adding a new live domain means one Python file.
+    The engine never changes.
+  </p>
+
+  <div class="domains-grid reveal">
+    <div class="domain-card live"><div class="domain-name"><span class="domain-live-dot live"></span>Healthcare</div><div class="domain-meta">ICU capacity · wait times · LWBS</div><div class="domain-events">7 event types</div></div>
+    <div class="domain-card live"><div class="domain-name"><span class="domain-live-dot live"></span>Supply Chain</div><div class="domain-meta">Fill rate · SLA breach · inventory turns</div><div class="domain-events">4 event types</div></div>
+    <div class="domain-card live"><div class="domain-name"><span class="domain-live-dot live"></span>Retail</div><div class="domain-meta">Revenue · conversion · cashier utilisation</div><div class="domain-events">3 event types</div></div>
+    <div class="domain-card live"><div class="domain-name"><span class="domain-live-dot live"></span>HR / Org</div><div class="domain-meta">Attrition · cascade · fill time</div><div class="domain-events">2 event types</div></div>
+    <div class="domain-card live"><div class="domain-name"><span class="domain-live-dot live"></span>Finance Portfolio</div><div class="domain-meta">NAV · drawdown · Sharpe · VaR-95</div><div class="domain-events">1 event type</div></div>
+    <div class="domain-card live"><div class="domain-name"><span class="domain-live-dot live"></span>Insurance</div><div class="domain-meta">Loss ratio · combined ratio · settlement</div><div class="domain-events">2 event types</div></div>
+    <div class="domain-card live"><div class="domain-name"><span class="domain-live-dot live"></span>Energy Grid</div><div class="domain-meta">Renewable fraction · load shed · CO₂</div><div class="domain-events">1 event type</div></div>
+    <div class="domain-card live"><div class="domain-name"><span class="domain-live-dot live"></span>Pharma Manufacturing</div><div class="domain-meta">Release rate · OOS rate · cycle time</div><div class="domain-events">3 event types</div></div>
+    <div class="domain-card live"><div class="domain-name"><span class="domain-live-dot live"></span>Banking / Credit</div><div class="domain-meta">Default rate · NII · capital ratio</div><div class="domain-events">live</div></div>
+    <div class="domain-card live"><div class="domain-name"><span class="domain-live-dot live"></span>Aviation</div><div class="domain-meta">On-time rate · turnaround · load factor</div><div class="domain-events">live</div></div>
+    <div class="domain-card live"><div class="domain-name"><span class="domain-live-dot live"></span>Pharma Clinical Trials</div><div class="domain-meta">Enrolment · dropout · phase progression</div><div class="domain-events">live</div></div>
+    <div class="domain-card live"><div class="domain-name"><span class="domain-live-dot live"></span>Maritime Shipping</div><div class="domain-meta">Port dwell · route delay · fuel cost</div><div class="domain-events">live</div></div>
+    <div class="domain-card live"><div class="domain-name"><span class="domain-live-dot live"></span>Performance Marketing</div><div class="domain-meta">ROAS · CAC · attribution decay</div><div class="domain-events">live</div></div>
+    <div class="domain-card"><div class="domain-name"><span class="domain-live-dot yaml"></span>Real Estate Dev</div><div class="domain-meta">Schema ready · handlers pending</div><div class="domain-events" style="color:var(--muted)">yaml only</div></div>
+    <div class="domain-card"><div class="domain-name"><span class="domain-live-dot yaml"></span>Semiconductor Mfg</div><div class="domain-meta">Schema ready · handlers pending</div><div class="domain-events" style="color:var(--muted)">yaml only</div></div>
+    <div class="domain-card"><div class="domain-name"><span class="domain-live-dot yaml"></span>+ 24 more schemas</div><div class="domain-meta">Urban planning · telecom · legal · education · sports · agriculture…</div><div class="domain-events" style="color:var(--muted)">yaml only</div></div>
+  </div>
+</section>
+
+<hr class="divider" />
+
+<!-- ═══════════════════ OUTPUT ═══════════════════ -->
+<section id="output">
+  <div class="section-label">Output & Reasoning</div>
+  <h2 class="reveal">Numbers become decisions</h2>
+  <p class="lead reveal">
+    The LLM narrative engine reads structured simulation output and generates plain-language analysis.
+    No hallucinated numbers — the model uses the <code>tool_use</code> pattern to read real metrics
+    directly from the run.
+  </p>
+
+  <div class="narrative-box reveal">
+    <p>
+      "Based on the simulation, if ICU capacity remains at current staffing levels, there is a
+      <strong style="color:var(--text)">78% probability</strong> that occupancy will exceed the 90% critical threshold within
+      11 days, peaking at an estimated <strong style="color:var(--text)">97% (CI: 89%–100%)</strong>. The primary driver
+      is not patient volume — which is within seasonal norms — but the nursing vacancy rate of 18%.
+      The model identifies two leverage points with asymmetric impact: adding 3 float nurses reduces
+      peak occupancy by 14 percentage points; extending discharge processing by 2 hours has
+      <strong style="color:var(--text)">no statistically significant effect</strong>."
+    </p>
+    <div class="narrative-meta">
+      <div>Narrative type <span>Risk Analysis</span></div>
+      <div>Based on <span>500 Monte Carlo runs</span></div>
+      <div>Confidence <span>95% CI</span></div>
+      <div>Generated via <span>Claude tool_use</span></div>
+    </div>
+  </div>
+
+  <div class="card-grid mt-8 reveal">
+    <div class="card">
+      <div class="card-icon">📝</div>
+      <h3>Executive Summary</h3>
+      <p>1-page decision brief. What matters, what the model recommends, what the uncertainty is. Built for board rooms.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">⚠️</div>
+      <h3>Risk Analysis</h3>
+      <p>Tail risks, threshold crossings, probability of adverse outcomes across the full simulation horizon.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🎚️</div>
+      <h3>Sensitivity Report</h3>
+      <p>Which parameters move the needle most. Ranked by impact, with confidence bands. Tells you where to focus.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🎯</div>
+      <h3>Goal-Seek</h3>
+      <p>"To hit 85% ICU occupancy, staffing must increase by at least 2.4 FTE nurses per shift."</p>
+    </div>
+  </div>
+</section>
+
+<hr class="divider" />
+
+<!-- ═══════════════════ PHASES ═══════════════════ -->
+<section id="phases">
+  <div class="section-label">Build Journey</div>
+  <h2 class="reveal">7 phases · 873 tests</h2>
+
+  <div class="timeline reveal">
+    <div class="tl-item">
+      <div class="tl-dot" style="background:var(--accent)"></div>
+      <div class="tl-phase">Phase 1</div>
+      <div class="tl-title">Foundation</div>
+      <div class="tl-desc">Entity, WorldState, RelationshipGraph, SimEvent, SimClock, EventQueue, SimulationRunner, ParallelSimulationRunner</div>
+      <div class="tl-tests text-accent">+124 tests</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot" style="background:var(--accent)"></div>
+      <div class="tl-phase">Phase 2</div>
+      <div class="tl-title">Full Discrete Event Simulation</div>
+      <div class="tl-desc">Healthcare end-to-end: 4 scenarios, 7 event types, metrics extraction, priority min-heap event queue</div>
+      <div class="tl-tests text-accent">+98 tests</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot" style="background:var(--accent2)"></div>
+      <div class="tl-phase">Phase 3</div>
+      <div class="tl-title">Multi-Paradigm + Scenario Management</div>
+      <div class="tl-desc">ABM (Voter Model), Feedback Loop (Bass Diffusion), Stock-and-Flow (SIR) — all three on the same core engine. Scenario branching.</div>
+      <div class="tl-tests text-accent2">+106 tests</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot" style="background:var(--green)"></div>
+      <div class="tl-phase">Phase 4</div>
+      <div class="tl-title">Uncertainty & Calibration</div>
+      <div class="tl-desc">Distributions on all inputs, stochastic sampling, confidence intervals on outputs, ABC calibration, per-run reproducible RNG</div>
+      <div class="tl-tests text-green">+116 tests</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot" style="background:var(--amber)"></div>
+      <div class="tl-phase">Phase 5</div>
+      <div class="tl-title">Output & Reasoning</div>
+      <div class="tl-desc">RunStore, 4 LLM narrative types via Anthropic tool_use, immutable audit trail, branching integrated with RunStore</div>
+      <div class="tl-tests text-amber">+90 tests</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot" style="background:var(--red)"></div>
+      <div class="tl-phase">Phase 6</div>
+      <div class="tl-title">REST API + CLI + React UI</div>
+      <div class="tl-desc">FastAPI routes (domains/runs/scenarios/narratives/calibration/goals), Typer CLI, 11-screen React frontend, 5 role profiles, 3 themes</div>
+      <div class="tl-tests text-red">+~60 tests</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot" style="background:var(--muted)"></div>
+      <div class="tl-phase">Phase 7</div>
+      <div class="tl-title">Production Hardening</div>
+      <div class="tl-desc">Structured logging, SQLiteRunStore (WAL mode), error middleware, request ID tracing, JSON→SQLite migration</div>
+      <div class="tl-tests" style="color:var(--muted)">+38 tests</div>
+    </div>
+  </div>
+
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;margin-top:2rem;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
+      <span style="font-weight:700">Test suite health</span>
+      <span style="font-family:'JetBrains Mono',monospace;color:var(--green);font-size:0.9rem">873 / 873 passing</span>
+    </div>
+    <div style="background:var(--dim);border-radius:100px;height:6px;">
+      <div class="progress-bar" style="width:100%"></div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider" />
+
+<!-- ═══════════════════ STACK ═══════════════════ -->
+<section id="stack">
+  <div class="section-label">Tech Stack</div>
+  <h2 class="reveal">Every layer chosen with intent</h2>
+
+  <div class="stack-grid reveal">
+    <div class="stack-item"><div class="stack-icon">🐍</div><div class="stack-name">Python</div><div class="stack-role">Primary language</div></div>
+    <div class="stack-item"><div class="stack-icon">🔒</div><div class="stack-name">Pydantic</div><div class="stack-role">Immutable data models</div></div>
+    <div class="stack-item"><div class="stack-icon">⚡</div><div class="stack-name">Ray</div><div class="stack-role">Parallel fan-out</div></div>
+    <div class="stack-item"><div class="stack-icon">📋</div><div class="stack-name">PyYAML</div><div class="stack-role">Domain schemas</div></div>
+    <div class="stack-item"><div class="stack-icon">🚀</div><div class="stack-name">FastAPI</div><div class="stack-role">REST API layer</div></div>
+    <div class="stack-item"><div class="stack-icon">⌨️</div><div class="stack-name">Typer</div><div class="stack-role">CLI interface</div></div>
+    <div class="stack-item"><div class="stack-icon">🤖</div><div class="stack-name">Anthropic SDK</div><div class="stack-role">LLM narratives</div></div>
+    <div class="stack-item"><div class="stack-icon">🗄️</div><div class="stack-name">SQLite WAL</div><div class="stack-role">Run persistence</div></div>
+    <div class="stack-item"><div class="stack-icon">⚛️</div><div class="stack-name">React + Vite</div><div class="stack-role">Frontend UI</div></div>
+    <div class="stack-item"><div class="stack-icon">🎨</div><div class="stack-name">Tailwind + Recharts</div><div class="stack-role">Styling + charts</div></div>
+    <div class="stack-item"><div class="stack-icon">🏪</div><div class="stack-name">Zustand</div><div class="stack-role">Frontend state</div></div>
+    <div class="stack-item"><div class="stack-icon">🔄</div><div class="stack-name">TanStack Query</div><div class="stack-role">API data layer</div></div>
+  </div>
+</section>
+
+<!-- ═══════════════════ FOOTER ═══════════════════ -->
+<footer>
+  <div style="font-weight:800;font-size:1.1rem;color:var(--accent);margin-bottom:0.5rem">simgenie</div>
+  <div>Vertical-agnostic simulation engine · 873 tests · 13 live domains · 39 schemas</div>
+  <div style="margin-top:0.5rem;color:var(--dim)">Built in 7 phases. The engine never changes. Only the domain does.</div>
+</footer>
+
+<script>
+// ── SCROLL REVEAL ──
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible') })
+}, { threshold: 0.1 })
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el))
+
+// ── LAYER TOGGLE ──
+function toggleLayer(el) { el.classList.toggle('open') }
+
+// ── FLOW DIAGRAM ──
+;(function() {
+  const steps = [
+    { icon: '❓', label: 'What-if\nQuestion', color: '#38bdf8' },
+    { icon: '📋', label: 'Load Domain\nSchema (YAML)', color: '#818cf8' },
+    { icon: '⚡', label: 'Build World\nState', color: '#818cf8' },
+    { icon: '🔀', label: 'Fan-out\nMonte Carlo', color: '#f59e0b' },
+    { icon: '🔁', label: 'Tick Event\nLoop', color: '#f59e0b' },
+    { icon: '📊', label: 'Aggregate\nDistributions', color: '#34d399' },
+    { icon: '🤖', label: 'Generate\nNarrative', color: '#34d399' },
+    { icon: '✅', label: 'Decision\nReady', color: '#38bdf8' },
+  ]
+  const container = document.getElementById('flow-diagram')
+  steps.forEach((s, i) => {
+    const box = document.createElement('div')
+    box.style.cssText = 'display:flex;align-items:center;gap:0;'
+    const node = document.createElement('div')
+    node.style.cssText = `
+      display:flex;flex-direction:column;align-items:center;gap:6px;
+      background:#0f1623;border:1px solid ${s.color}44;border-radius:10px;
+      padding:12px 14px;min-width:80px;text-align:center;
+      transition:all 0.3s;cursor:default;
+    `
+    node.innerHTML = `<div style="font-size:1.5rem">${s.icon}</div>
+      <div style="font-size:0.68rem;font-weight:600;color:${s.color};line-height:1.4;white-space:pre">${s.label}</div>`
+    node.addEventListener('mouseover', () => { node.style.borderColor = s.color; node.style.background = s.color + '11' })
+    node.addEventListener('mouseout', () => { node.style.borderColor = s.color + '44'; node.style.background = '#0f1623' })
+    box.appendChild(node)
+    if (i < steps.length - 1) {
+      const arr = document.createElement('div')
+      arr.style.cssText = 'color:#334155;font-size:1rem;padding:0 4px;flex-shrink:0'
+      arr.textContent = '→'
+      box.appendChild(arr)
+    }
+    container.appendChild(box)
+  })
+})()
+
+// ── HERO CANVAS: particle network ──
+;(function() {
+  const canvas = document.getElementById('hero-canvas')
+  const ctx = canvas.getContext('2d')
+  let W, H, particles = []
+
+  function resize() {
+    W = canvas.width = window.innerWidth
+    H = canvas.height = window.innerHeight
+  }
+  resize()
+  window.addEventListener('resize', () => { resize(); init() })
+
+  class P {
+    constructor() { this.reset() }
+    reset() {
+      this.x = Math.random() * W; this.y = Math.random() * H
+      this.vx = (Math.random() - 0.5) * 0.35; this.vy = (Math.random() - 0.5) * 0.35
+      this.r = Math.random() * 1.5 + 0.4; this.alpha = Math.random() * 0.45 + 0.08
+    }
+    update() {
+      this.x += this.vx; this.y += this.vy
+      if (this.x < 0 || this.x > W || this.y < 0 || this.y > H) this.reset()
+    }
+    draw() {
+      ctx.beginPath(); ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2)
+      ctx.fillStyle = `rgba(56,189,248,${this.alpha})`; ctx.fill()
+    }
+  }
+  function init() { particles = Array.from({length:90}, () => new P()) }
+  init()
+
+  function loop() {
+    ctx.clearRect(0, 0, W, H)
+    particles.forEach(p => { p.update(); p.draw() })
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x, dy = particles[i].y - particles[j].y
+        const d = Math.sqrt(dx*dx + dy*dy)
+        if (d < 110) {
+          ctx.beginPath(); ctx.moveTo(particles[i].x, particles[i].y); ctx.lineTo(particles[j].x, particles[j].y)
+          ctx.strokeStyle = `rgba(56,189,248,${0.07 * (1 - d/110)})`; ctx.lineWidth = 0.5; ctx.stroke()
+        }
+      }
+    }
+    requestAnimationFrame(loop)
+  }
+  loop()
+})()
+
+// ── TYPEWRITER ──
+;(function() {
+  const queries = [
+    { q: 'What if we add 2 ICU nurses per shift?',       r: '→ ICU occupancy: 87% → 74%  (CI: 68–81%)  ✓ safe', rc: '#34d399' },
+    { q: 'What if a key supplier fails for 10 days?',    r: '→ SLA breach probability: 23% → 61%  ⚠ critical',  rc: '#f59e0b' },
+    { q: 'What if we raise retention bonus by $5k?',     r: '→ 12-month attrition: 18.2% → 11.4%  saves $2.1M', rc: '#34d399' },
+    { q: 'What if FDA approval slips by 6 months?',      r: '→ Portfolio NPV: –$340M  ·  P(ruin) < 3%  ✓',       rc: '#34d399' },
+    { q: 'What if grid renewable mix hits 60%?',         r: '→ Load shed risk: 4.1% → 9.8%  storage gap flagged', rc: '#f59e0b' },
+  ]
+  const el = document.getElementById('whatif-text')
+  let qi = 0, ci = 0, phase = 'q', paused = false
+
+  function tick() {
+    if (paused) return
+    const item = queries[qi]
+    const src = phase === 'q' ? item.q : item.r
+    const col = phase === 'q' ? '#38bdf8' : item.rc
+    if (ci <= src.length) {
+      el.innerHTML = `<span style="color:${col}">${src.slice(0,ci)}</span><span class="cursor"></span>`
+      ci++
+      setTimeout(tick, phase === 'q' ? 42 : 28)
+    } else {
+      paused = true
+      setTimeout(() => {
+        paused = false
+        if (phase === 'q') { phase = 'r'; ci = 0; tick() }
+        else { qi = (qi + 1) % queries.length; phase = 'q'; ci = 0; tick() }
+      }, phase === 'q' ? 400 : 2000)
+    }
+  }
+  tick()
+})()
+
+// ── DES ANIMATION ──
+;(function() {
+  const canvas = document.getElementById('des-canvas')
+  if (!canvas) return
+  const ctx = canvas.getContext('2d')
+  const dpr = devicePixelRatio || 1
+  const cw = canvas.parentElement.offsetWidth, ch = 260
+  canvas.width = cw * dpr; canvas.height = ch * dpr
+  canvas.style.width = cw + 'px'; canvas.style.height = ch + 'px'
+  ctx.scale(dpr, dpr)
+  const W = cw, H = ch
+
+  const steps = [
+    { tick:0.0, name:'PatientArrival',   patients:1, icu:'4%',  beds:23, wait:'0.2h', nurses:12, events:1 },
+    { tick:0.8, name:'BedAssignment',    patients:1, icu:'4%',  beds:22, wait:'0.8h', nurses:12, events:2 },
+    { tick:2.1, name:'LabRequest',       patients:1, icu:'4%',  beds:22, wait:'0.8h', nurses:12, events:3 },
+    { tick:3.4, name:'NurseShiftChange', patients:1, icu:'8%',  beds:22, wait:'0.8h', nurses:10, events:4 },
+    { tick:4.7, name:'PatientDischarge', patients:0, icu:'4%',  beds:23, wait:'1.1h', nurses:10, events:5 },
+    { tick:5.2, name:'ICUTransfer',      patients:1, icu:'12%', beds:22, wait:'1.1h', nurses:10, events:6 },
+  ]
+  let step = 0, particles = [], flash = 0
+
+  const nodes = [
+    { label:'WorldState', angle:-90, col:'#818cf8', r:22 },
+    { label:'EventQueue', angle:20,  col:'#38bdf8', r:22 },
+    { label:'RunStore',   angle:160, col:'#34d399', r:22 },
+  ]
+
+  function px(angle, dist) { return W/2 + Math.cos(angle*Math.PI/180)*dist }
+  function py(angle, dist) { return H/2 + Math.sin(angle*Math.PI/180)*dist }
+
+  class Spark {
+    constructor() {
+      const a = Math.random()*Math.PI*2, d = 30+Math.random()*50
+      this.x = W/2; this.y = H/2
+      this.tx = W/2 + Math.cos(a)*d; this.ty = H/2 + Math.sin(a)*d
+      this.life = 1
+    }
+    update() { this.x+=(this.tx-this.x)*0.08; this.y+=(this.ty-this.y)*0.08; this.life-=0.02 }
+    draw() {
+      ctx.beginPath(); ctx.arc(this.x, this.y, 3, 0, Math.PI*2)
+      ctx.fillStyle = `rgba(56,189,248,${this.life})`; ctx.fill()
+    }
+  }
+
+  function applyStep(s) {
+    document.querySelectorAll('.eq-item').forEach((el, i) => {
+      el.classList.remove('active','done')
+      if (i < s.events-1) el.classList.add('done')
+      if (i === s.events-1) el.classList.add('active')
+    })
+    const upd = (id, val) => {
+      const el = document.getElementById(id)
+      if (!el) return
+      if (el.textContent !== String(val)) {
+        el.textContent = val; el.classList.add('changed')
+        setTimeout(() => el.classList.remove('changed'), 800)
+      }
+    }
+    upd('sv-patients', s.patients); upd('sv-icu', s.icu)
+    upd('sv-beds', s.beds); upd('sv-wait', s.wait)
+    upd('sv-nurses', s.nurses); upd('sv-events', s.events)
+    document.getElementById('tick-display').textContent = s.tick.toFixed(1)
+    for (let i=0;i<16;i++) particles.push(new Spark())
+    flash = 25
+  }
+
+  function draw() {
+    ctx.clearRect(0,0,W,H)
+    // grid
+    ctx.strokeStyle='rgba(20,35,55,0.6)'; ctx.lineWidth=1
+    for(let x=0;x<W;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()}
+    for(let y=0;y<H;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
+
+    // edges to satellite nodes
+    nodes.forEach(n => {
+      const nx=px(n.angle,105), ny=py(n.angle,105)
+      ctx.beginPath(); ctx.moveTo(W/2,H/2); ctx.lineTo(nx,ny)
+      ctx.strokeStyle=n.col+'33'; ctx.lineWidth=1.5; ctx.stroke()
+    })
+
+    // satellite nodes
+    nodes.forEach(n => {
+      const nx=px(n.angle,105), ny=py(n.angle,105)
+      ctx.beginPath(); ctx.arc(nx,ny,n.r,0,Math.PI*2)
+      ctx.fillStyle='#0f1623'; ctx.fill()
+      ctx.strokeStyle=n.col; ctx.lineWidth=1.5; ctx.stroke()
+      ctx.fillStyle=n.col; ctx.font='600 9px Inter'
+      ctx.textAlign='center'; ctx.textBaseline='middle'
+      ctx.fillText(n.label,nx,ny)
+    })
+
+    // center flash ring
+    if (flash>0) {
+      ctx.beginPath(); ctx.arc(W/2,H/2,40+(25-flash)*1.2,0,Math.PI*2)
+      ctx.strokeStyle=`rgba(56,189,248,${flash/25*0.35})`; ctx.lineWidth=2; ctx.stroke()
+      flash--
+    }
+
+    // center node
+    ctx.beginPath(); ctx.arc(W/2,H/2,38,0,Math.PI*2)
+    ctx.fillStyle='#0d1520'; ctx.fill()
+    ctx.strokeStyle='#38bdf8'; ctx.lineWidth=2; ctx.stroke()
+
+    const s = steps[step]
+    ctx.fillStyle='#38bdf8'; ctx.font='600 10px Inter'
+    ctx.textAlign='center'; ctx.textBaseline='middle'
+    const words = s.name.match(/[A-Z][a-z]*/g)||[s.name]
+    const mid = Math.ceil(words.length/2)
+    const line1 = words.slice(0,mid).join('')
+    const line2 = words.slice(mid).join('')
+    if (line2) {
+      ctx.fillText(line1,W/2,H/2-7); ctx.fillText(line2,W/2,H/2+7)
+    } else {
+      ctx.fillText(s.name,W/2,H/2)
+    }
+    ctx.fillStyle='#64748b'; ctx.font='10px JetBrains Mono'
+    ctx.textBaseline='alphabetic'
+    ctx.fillText('t='+s.tick.toFixed(1),W/2,H/2+25)
+
+    particles = particles.filter(p=>p.life>0)
+    particles.forEach(p=>{p.update();p.draw()})
+    requestAnimationFrame(draw)
+  }
+  draw()
+
+  applyStep(steps[0])
+  setInterval(() => { step=(step+1)%steps.length; applyStep(steps[step]) }, 2000)
+})()
+
+// ── MONTE CARLO CANVAS ──
+;(function() {
+  const canvas = document.getElementById('mc-canvas')
+  const ctx = canvas.getContext('2d')
+  const dpr = devicePixelRatio || 1
+  const W = canvas.offsetWidth, H = 320
+  canvas.width = W * dpr; canvas.height = H * dpr
+  canvas.style.width = W+'px'; canvas.style.height = H+'px'
+  ctx.scale(dpr, dpr)
+
+  const N = 55, TICKS = 100
+  const colors = ['#38bdf8','#818cf8','#34d399','#f59e0b','#f87171','#a78bfa','#67e8f9']
+  const PAD = { l:44, r:16, t:26, b:24 }
+  const PW = W - PAD.l - PAD.r, PH = H - PAD.t - PAD.b
+
+  function seededRng(seed) {
+    let s = seed
+    return () => { s = (s*1664525+1013904223)&0xffffffff; return (s>>>0)/0xffffffff }
+  }
+
+  const runs = Array.from({length:N}, (_,i) => {
+    const rng = seededRng(i*2654435761+1)
+    let v = 0.25 + rng()*0.2
+    const pts = [v]
+    for (let t=1;t<TICKS;t++) {
+      v += (rng()-0.47)*0.055 + Math.sin(t*0.25+i)*0.008
+      v = Math.max(0.04, Math.min(0.97, v))
+      pts.push(v)
+    }
+    return pts
+  })
+
+  let frame = 0
+  function gx(t) { return PAD.l + t * PW / TICKS }
+  function gy(v) { return PAD.t + (1-v) * PH }
+
+  function drawMC() {
+    ctx.clearRect(0,0,W,H)
+
+    // background
+    ctx.fillStyle='#0f1623'; ctx.fillRect(0,0,W,H)
+
+    // grid
+    ctx.strokeStyle='rgba(30,45,69,0.5)'; ctx.lineWidth=1
+    for(let i=0;i<=4;i++){
+      const y=gy(i/4)
+      ctx.beginPath(); ctx.moveTo(PAD.l,y); ctx.lineTo(W-PAD.r,y); ctx.stroke()
+      ctx.fillStyle='#475569'; ctx.font='10px JetBrains Mono'; ctx.textAlign='right'
+      ctx.fillText((i*25)+'%', PAD.l-6, y+4)
+    }
+
+    const vis = Math.min(TICKS, Math.floor(frame / 1.2))
+
+    // percentile band
+    if (vis>3) {
+      ctx.beginPath()
+      for(let t=0;t<vis;t++){
+        const vals=runs.map(r=>r[t]).sort((a,b)=>a-b)
+        const p10=vals[Math.floor(N*0.1)]
+        ctx.lineTo(gx(t),gy(p10))
+        if(t===0) ctx.moveTo(gx(t),gy(p10))
+      }
+      for(let t=vis-1;t>=0;t--){
+        const vals=runs.map(r=>r[t]).sort((a,b)=>a-b)
+        const p90=vals[Math.floor(N*0.9)]
+        ctx.lineTo(gx(t),gy(p90))
+      }
+      ctx.closePath()
+      ctx.fillStyle='rgba(56,189,248,0.06)'; ctx.fill()
+
+      // IQR band
+      ctx.beginPath()
+      for(let t=0;t<vis;t++){
+        const vals=runs.map(r=>r[t]).sort((a,b)=>a-b)
+        const p25=vals[Math.floor(N*0.25)]
+        t===0?ctx.moveTo(gx(t),gy(p25)):ctx.lineTo(gx(t),gy(p25))
+      }
+      for(let t=vis-1;t>=0;t--){
+        const vals=runs.map(r=>r[t]).sort((a,b)=>a-b)
+        const p75=vals[Math.floor(N*0.75)]
+        ctx.lineTo(gx(t),gy(p75))
+      }
+      ctx.closePath()
+      ctx.fillStyle='rgba(56,189,248,0.12)'; ctx.fill()
+    }
+
+    // individual run lines
+    runs.forEach((run,ri) => {
+      ctx.beginPath()
+      for(let t=0;t<vis;t++){
+        const x=gx(t), y=gy(run[t])
+        t===0?ctx.moveTo(x,y):ctx.lineTo(x,y)
+      }
+      ctx.strokeStyle=colors[ri%colors.length]+'4a'; ctx.lineWidth=1; ctx.stroke()
+    })
+
+    // median line
+    if (vis>3) {
+      ctx.beginPath()
+      for(let t=0;t<vis;t++){
+        const vals=runs.map(r=>r[t]).sort((a,b)=>a-b)
+        const med=vals[Math.floor(N*0.5)]
+        t===0?ctx.moveTo(gx(t),gy(med)):ctx.lineTo(gx(t),gy(med))
+      }
+      ctx.strokeStyle='#38bdf8'; ctx.lineWidth=2.5; ctx.stroke()
+    }
+
+    // 75% threshold
+    const thY=gy(0.75)
+    ctx.beginPath(); ctx.moveTo(PAD.l,thY); ctx.lineTo(W-PAD.r,thY)
+    ctx.strokeStyle='rgba(248,113,113,0.55)'; ctx.lineWidth=1.5
+    ctx.setLineDash([6,4]); ctx.stroke(); ctx.setLineDash([])
+    ctx.fillStyle='#f87171'; ctx.font='600 10px Inter'; ctx.textAlign='left'
+    ctx.fillText('75% critical threshold',PAD.l+4,thY-5)
+
+    // x labels
+    ctx.fillStyle='#475569'; ctx.font='10px JetBrains Mono'; ctx.textAlign='center'
+    ctx.fillText('t=0',gx(0),H-6)
+    ctx.fillText('t=50',gx(50),H-6)
+    ctx.fillText('t=100',gx(99),H-6)
+
+    // legend
+    ctx.fillStyle='#64748b'; ctx.font='11px Inter'; ctx.textAlign='left'
+    ctx.fillText(`${N} parallel runs  ·  dark band = IQR  ·  outer band = 10th–90th pct  ·  line = median`, PAD.l, 18)
+
+    frame = (frame+1) % (TICKS*1.2 + 80)
+    requestAnimationFrame(drawMC)
+  }
+  drawMC()
+})()
+
+// ── SCHEMA SWAP ──
+;(function() {
+  const schemas = [
+    {
+      file:'🏥 healthcare.yaml', chipCol:'var(--accent)', borderCol:'rgba(56,189,248,0.3)',
+      body:`<div class="schema-field">time_unit: <span>hours</span></div>
+            <div class="schema-field">entities:</div>
+            <div class="schema-field">&nbsp;&nbsp;- <span>Patient</span></div>
+            <div class="schema-field">&nbsp;&nbsp;- <span>Nurse</span></div>
+            <div class="schema-field">&nbsp;&nbsp;- <span>ICU_Bed</span></div>
+            <div class="schema-field">metrics:</div>
+            <div class="schema-field">&nbsp;&nbsp;- <span>icu_occupancy</span></div>
+            <div class="schema-field">&nbsp;&nbsp;- <span>lwbs_rate</span></div>`
+    },
+    {
+      file:'🚚 supply_chain.yaml', chipCol:'var(--amber)', borderCol:'rgba(245,158,11,0.3)',
+      body:`<div class="schema-field">time_unit: <span>days</span></div>
+            <div class="schema-field">entities:</div>
+            <div class="schema-field">&nbsp;&nbsp;- <span>Supplier</span></div>
+            <div class="schema-field">&nbsp;&nbsp;- <span>Warehouse</span></div>
+            <div class="schema-field">&nbsp;&nbsp;- <span>SKU</span></div>
+            <div class="schema-field">metrics:</div>
+            <div class="schema-field">&nbsp;&nbsp;- <span>fill_rate</span></div>
+            <div class="schema-field">&nbsp;&nbsp;- <span>sla_breach_rate</span></div>`
+    },
+    {
+      file:'📈 finance_portfolio.yaml', chipCol:'var(--green)', borderCol:'rgba(52,211,153,0.3)',
+      body:`<div class="schema-field">time_unit: <span>business_days</span></div>
+            <div class="schema-field">entities:</div>
+            <div class="schema-field">&nbsp;&nbsp;- <span>Asset</span></div>
+            <div class="schema-field">&nbsp;&nbsp;- <span>Portfolio</span></div>
+            <div class="schema-field">&nbsp;&nbsp;- <span>RiskFactor</span></div>
+            <div class="schema-field">metrics:</div>
+            <div class="schema-field">&nbsp;&nbsp;- <span>drawdown</span></div>
+            <div class="schema-field">&nbsp;&nbsp;- <span>var_95</span></div>`
+    },
+    {
+      file:'✈️ aviation.yaml', chipCol:'var(--accent2)', borderCol:'rgba(129,140,248,0.3)',
+      body:`<div class="schema-field">time_unit: <span>minutes</span></div>
+            <div class="schema-field">entities:</div>
+            <div class="schema-field">&nbsp;&nbsp;- <span>Flight</span></div>
+            <div class="schema-field">&nbsp;&nbsp;- <span>Gate</span></div>
+            <div class="schema-field">&nbsp;&nbsp;- <span>CrewMember</span></div>
+            <div class="schema-field">metrics:</div>
+            <div class="schema-field">&nbsp;&nbsp;- <span>on_time_rate</span></div>
+            <div class="schema-field">&nbsp;&nbsp;- <span>turnaround_time</span></div>`
+    },
+    {
+      file:'⚡ energy_grid.yaml', chipCol:'var(--red)', borderCol:'rgba(248,113,113,0.3)',
+      body:`<div class="schema-field">time_unit: <span>hours</span></div>
+            <div class="schema-field">entities:</div>
+            <div class="schema-field">&nbsp;&nbsp;- <span>Generator</span></div>
+            <div class="schema-field">&nbsp;&nbsp;- <span>GridNode</span></div>
+            <div class="schema-field">&nbsp;&nbsp;- <span>Consumer</span></div>
+            <div class="schema-field">metrics:</div>
+            <div class="schema-field">&nbsp;&nbsp;- <span>renewable_fraction</span></div>
+            <div class="schema-field">&nbsp;&nbsp;- <span>load_shed_risk</span></div>`
+    },
+  ]
+  let idx = 0
+  const card = document.getElementById('schema-to-card')
+  const title = document.getElementById('schema-to-title')
+  const body  = document.getElementById('schema-to-body')
+  const arrow = document.getElementById('swap-arrow')
+
+  setInterval(() => {
+    idx = (idx + 1) % schemas.length
+    const s = schemas[idx]
+    arrow.textContent = '⟳'
+    arrow.style.transform = 'rotate(180deg)'
+    setTimeout(() => {
+      arrow.textContent = '⟶'
+      arrow.style.transform = ''
+      card.style.borderColor = s.borderCol
+      title.innerHTML = `${s.file} <span class="schema-chip" style="background:rgba(0,0,0,0.2);border-color:${s.borderCol};color:${s.chipCol}">Domain Schema</span>`
+      body.innerHTML = s.body
+    }, 350)
+  }, 3800)
+})()
+</script>
+</body>
+</html>
